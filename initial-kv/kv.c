@@ -2,20 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Set up data structure to hold all key,value pairs
-int npairs = 100; //number of key value structs allocated within array
-struct kv{
-    int key; 
-    char *value;
-};
-
-struct kv kv_pairs[npairs];
-
 // - *put*: The format is `p,key,value`, where `key` is an integer, and
 // `value` an arbitrary string (without commas in it).
-int put(int key, char value[]){
-    printf("key: %i \n",key);
-    printf("value: %s \n",value);
+int put(int key, char value[], struct kv** kv_pairs){
+    // printf("key: %i \n",key);
+    // printf("value: %s \n",value);
     return 0;
 }
 
@@ -83,6 +74,13 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
+    int npairs = 100; //number of key value structs allocated within array
+    struct kv{
+        int key; 
+        char *value;
+        };
+    struct kv *kv_pairs = malloc(npairs * sizeof(struct kv));   
+
     for(int j = 1; j < argc; j++){
          //Split string
         //char *command;
@@ -93,16 +91,16 @@ int main(int argc, char *argv[]){
         for (i=0;(dest[i]=strsep(&argv[j],","))!=NULL;i++){
             continue;
         }
-        for (int c=0;c<i;c++) {
-            printf(" arg %d : [%s] \n",c,dest[c]);
-            }
+        // for (int c=0;c<i;c++) {
+        //     printf(" arg %d : [%s] \n",c,dest[c]);
+        //     }
 
         char in_cmd = *dest[0];  
         
         //checking for command type
         if(in_cmd == 'p')
         {
-            put(atoi(dest[1]), dest[2]);
+            put(atoi(dest[1]), dest[2], kv_pairs);
         }else if (in_cmd == 'g')
         {
             get(atoi(dest[1]));
