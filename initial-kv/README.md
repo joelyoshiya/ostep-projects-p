@@ -183,10 +183,11 @@ Here are some tips:
     
     DONE Then, add a loop and parse multiple commands on one command line.
 
+    DONE
     Then, add the ability to add elements to an in-memory data structure
     (but don't worry about persistence.)
     
-    Then add persistence. Or something like that. 
+    INP Then add persistence. Or something like that. 
 
 - **Testing is critical.** A great programmer we once knew said you have to
 write five to ten lines of test code for every line of code you produce;
