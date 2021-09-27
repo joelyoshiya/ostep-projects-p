@@ -141,11 +141,12 @@ int all(Kv **head){
 int load_db(Kv **head){
     FILE *fp = fopen("database.txt","r+");
     if (fp == NULL){
-        fp = open("database.txt","w+");
+        fp = fopen("database.txt","w+");
     }
 
     //getline()
     //fclose()
+    return 0;
 }
 
 //write out kv pairs to database.txt file right before exit
@@ -156,10 +157,16 @@ int write_db(Kv** head){
     fprintf(stderr, "Error opening the file: %s\n", strerror( errno ));
     perror("Error printed by perror");
 	} else {
+    Kv *currNode = *head;
+        while(currNode!= NULL){
+            currNode = currNode->next;
+            char str[] = "Example char for input\n";
+            fwrite(str , 1 , sizeof(str) , fp); 
+        }
 		fclose (fp);
 	}
-    //fread()
-    //fwrite()
+
+    return 0;
 }
 
 int main(int argc, char *argv[]){
@@ -244,6 +251,7 @@ int main(int argc, char *argv[]){
         }
 
         }
+        write_db(hd_ptr);
 
         return 0;
 }
