@@ -8,6 +8,7 @@ int main(int argc, char *argv[]){
 
     /// GLOBAL VARS
     // TODO REIMPLEMENT WITH AN ARRAY OF PATHS
+    // See Piazza: @376
     char *path = "/bin";
 
     static char* built_in_cmds[3] = {"exit","cd","path"};
@@ -55,8 +56,9 @@ int main(int argc, char *argv[]){
                 ;   
             // for (int c = 0; c < i; c++)
             //     printf(" arg %d : [%s]\n", c, dest[c]); 
-                        int num_args = i;
-            printf("Num args: %i\n", num_args);
+
+            int num_args = i - 1; //prog name implicit
+            // printf("Num args: %i\n", num_args);
 
             //parsed args in dest, cleaned so no newline
 
@@ -71,12 +73,18 @@ int main(int argc, char *argv[]){
                         exit(0);
                     }
                     if(i == 1){
-                        /*cd: cd always take one argument (0 or >1 args should be 
-                        signaled as an error). To change directories, 
-                        use the chdir() system call with the argument 
-                        supplied by the user; if chdir fails, 
-                        that is also an error.*/
-                        //call cd
+                        if((num_args == 0) | (num_args > 1)){
+                            char error_message[30] = "An error has occurred\n";
+                            write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        }else{
+                            //VALID # OF ARGUMENTS
+                        }
+                        char *dir_path = dest[1];
+                        int chdir_rc = chdir(dir_path);
+                        if(chdir_rc == -1){
+                            char error_message[30] = "An error has occurred\n";
+                            write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        }
                     }
                     if(i == 2){
                         /*path: The path command takes 0 or more arguments, 
