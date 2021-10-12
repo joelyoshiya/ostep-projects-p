@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]){
 
-    /// GLOBAL VARS
+    // GLOBAL VARS
     // TODO REIMPLEMENT WITH AN ARRAY OF PATHS
     // See Piazza: @376
     int paths_num = 100;
@@ -29,8 +29,7 @@ int main(int argc, char *argv[]){
             //printf("Two arguments: Batch Mode with argument: %s \n",argv[1]);
             // TODO IMPLEMENT FOR A FILE INPUT
             // try to open file and store txt -> if fails, exit(1)
-        }
-        
+        }    
     }else{
         //Interactive mode
         //while loop - condition: if the next input is not exit
@@ -58,8 +57,7 @@ int main(int argc, char *argv[]){
             //https://stackoverflow.com/questions/50915364/how-strsep-works-in-c
             copy[strcspn(copy, "\n")] = '\0';//removes trailing newline
 
-            for (i = 0; i < 10 && (dest[i] = strsep(&copy, " ")) != NULL; i++)
-                ;   
+            for (i = 0; i < 10 && (dest[i] = strsep(&copy, " ")) != NULL; i++);   
             // for (int c = 0; c < i; c++)
             //     printf(" arg %d : [%s]\n", c, dest[c]); 
 
@@ -130,11 +128,12 @@ int main(int argc, char *argv[]){
             for(int m = 0; m < paths_used; m++){
                 //form path
                 path_copy = malloc(100);
-                if((strlen(paths[m]) + strlen(dest[0]) + sizeof("/")) <= sizeof(path_copy)){
-                    memcpy(path_copy, paths[m], strlen(paths[m]));
-                    strcat(path_copy,"/");
-                    strcat(path_copy, dest[0]);//concat target prog name
-                }
+                memcpy(path_copy, paths[m], strlen(paths[m]));
+                strcat(path_copy,"/");
+                strcat(path_copy, dest[0]);//concat target prog name
+
+                //attempt to access with path
+                // printf("path_copy: %s\n", path_copy);
                 rc = access(path_copy, X_OK);
 
                 if(rc == 0){
@@ -151,15 +150,12 @@ int main(int argc, char *argv[]){
             //tried to access with all paths, failed
             char error_message[30] = "An error has occurred\n";
             write(STDERR_FILENO, error_message, strlen(error_message));
-
             //END OF WHILE
         }
 
         free(line);
         fclose(stdin);
         exit(0);
-        // Interactive mode
-        // getLine() & strsep()
 
     }
     //end of main
