@@ -31,7 +31,7 @@ shell, by reading the man pages or other online materials.
 ### Basic Shell: `wish`
 
 Your basic shell, called `wish` (short for Wisconsin Shell, naturally), is
-basically an interactive loop: it repeatedly prints a prompt `wish> ` (note
+basically an interactive loop: it repeatedly prints a prompt/÷÷÷÷÷÷÷÷÷// `wish> ` (note
 the space after the greater-than sign), parses the input, executes the command
 specified on that line of input, and waits for the command to finish. This is
 repeated until the user types `exit`.  The name of your final executable
