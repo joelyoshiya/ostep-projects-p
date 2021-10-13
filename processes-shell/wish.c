@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+//testing: ~cs537-1/tests/p2a/test-wish.sh -c
 
 int main(int argc, char *argv[]){
 
@@ -10,8 +11,12 @@ int main(int argc, char *argv[]){
 
     // RUN MODE: 0 -> Interactive, 1 -> Batch
     int rm = 0;
-    //FILE POINTER
+    //BATCH MODE VARS
     FILE *fp;
+    // INTERACTIVE mode vars
+    char *line = " ";
+    size_t len = 0;
+    ssize_t nread;
     // PATH GLOBAL VARS - See Piazza: @376
     int paths_num = 100;
     int paths_used = 2;
@@ -24,7 +29,8 @@ int main(int argc, char *argv[]){
     
     //check cl args
     if(argc > 2){
-        printf("error: too many arguments provided\n");
+        char error_message[30] = "An error has occurred\n";
+        write(STDERR_FILENO, error_message, strlen(error_message)); 
         exit(1);//error, more than a single argument
     }else if(argc == 2){
         rm = 1; // Run mode indicator: BATCH
@@ -32,23 +38,10 @@ int main(int argc, char *argv[]){
         if (fp == NULL){
             exit(1);// BAD FILE
         }
-    }
-
-    // BATCH mode, second argument must be a text file to read input from
-    if(strcmp(argv[0],"./wish")== 0){
-        //printf("Two arguments: Batch Mode with argument: %s \n",argv[1]);
-        // TODO IMPLEMENT FOR A FILE INPUT
-        // try to open file and store txt -> if fails, exit(1)
-    }    
-    // INTERACTIVE mode
-    //while loop - condition: if the next input is not exit
-    char *line = " ";
-    size_t len = 0;
-    ssize_t nread;
+    }   
 
     //MAIN LOOP
     while (strcmp(line,"exit") != 0) {
-        
         if(rm == 0){
             //INTERACTIVE MODE
             printf("wish> ");
@@ -111,12 +104,12 @@ int main(int argc, char *argv[]){
                         write(STDERR_FILENO, error_message, strlen(error_message)); 
                     }else{
                         //VALID # OF ARGUMENTS
-                    }
-                    char *dir_path = dest[1];
-                    int chdir_rc = chdir(dir_path);
-                    if(chdir_rc == -1){
-                        char error_message[30] = "An error has occurred\n";
-                        write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        char *dir_path = dest[1];
+                        int chdir_rc = chdir(dir_path);
+                        if(chdir_rc == -1){
+                            char error_message[30] = "An error has occurred\n";
+                            write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        }   
                     }
                 }
                 if(i == 2){

@@ -1,3 +1,4 @@
-path tests
-p1.sh & p2.sh & p3.sh
-exit
+loop -3 echo hello
+loop four echo world
+loop
+loop 3 echo hello world

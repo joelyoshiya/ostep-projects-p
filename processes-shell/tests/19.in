@@ -1,3 +1,3 @@
-path tests
-p1.sh&p2.sh&p3.sh
-exit
+loop 2 echo $loop hello world
+path /bin /usr/bin/
+loop 3 head -n $loop tests/19.in

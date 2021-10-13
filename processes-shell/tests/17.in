@@ -1,3 +1,2 @@
-path tests
-p1.sh & p2.sh &
-exit
+loop 3 echo hello
+loop 4 echo world
