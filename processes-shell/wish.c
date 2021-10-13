@@ -133,19 +133,29 @@ int main(int argc, char *argv[]){
                     }
                 }
                 if(i == 2){
-                    // PATH BIC
-                    //FIRST CLEAR DATA STRUCT
-                    for(int k = 0; (k < paths_num) && (paths[k] != NULL); k++){
-                        paths[k] = NULL;//de-allocates each char pointer
+                    int fork_rc = fork();
+                    if(fork_rc < 0){
+                        //fork failed -> exit
+                        exit(0);
+                    }else if(fork_rc == 0){
+                        // PATH BIC
+                        //FIRST CLEAR DATA STRUCT
+                        for(int k = 0; (k < paths_num) && (paths[k] != NULL); k++){
+                            paths[k] = NULL;//de-allocates each char pointer
+                        }
+                        // ASSIGN PATHS
+                        for(int j = 1; (j < (num_args+1)) && (j < paths_num); j++){
+                            paths[j -1] = dest[j];
+                            
+                            printf("paths[%i]: %s\n", j-1, paths[j-1]);
+                        }
+                        paths_used = num_args;//update num of paths
+                        exit(0);
+                    }else{
+                        int wc = wait(NULL);
+                        assert(wc >= 0);
+                        break;//don't need to check for other bult-ins
                     }
-                    // ASSIGN PATHS
-                    for(int j = 1; (j < (num_args+1)) && (j < paths_num); j++){
-                        paths[j -1] = dest[j];
-                        
-                        printf("paths[%i]: %s\n", j-1, paths[j-1]);
-                    }
-                    paths_used = num_args;//update num of paths
-                    break; // don't check for other built-ins
                 }
             }
         }
