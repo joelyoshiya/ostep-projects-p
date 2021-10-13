@@ -7,16 +7,17 @@
 int main(int argc, char *argv[]){
 
     // GLOBAL VARS
+
     // RUN MODE: 0 -> Interactive, 1 -> Batch
     int rm = 0;
-
-    // See Piazza: @376
+    //FILE POINTER
+    FILE *fp;
+    // PATH GLOBAL VARS - See Piazza: @376
     int paths_num = 100;
     int paths_used = 2;
     char *paths[paths_num];
     paths[0] = "/bin";
-    paths[1] = "usr/bin/ls"; //check if prog is here if needed
-
+    paths[1] = "/usr/bin"; //check if prog is here if needed
     //BUILT IN COMMANDS
     static char* built_in_cmds[3] = {"exit","cd","path"};
     int num_bic = 3;
@@ -27,8 +28,11 @@ int main(int argc, char *argv[]){
         exit(1);//error, more than a single argument
     }else if(argc == 2){
         rm = 1; // Run mode indicator: BATCH
+        fp = fopen(argv[1],"r");
+        if (fp == NULL){
+            exit(1);// BAD FILE
+        }
     }
-
 
     // BATCH mode, second argument must be a text file to read input from
     if(strcmp(argv[0],"./wish")== 0){
@@ -55,14 +59,18 @@ int main(int argc, char *argv[]){
                 exit(0);
             }
         }else if(rm == 1){
-            //BATCH MODE
-            FILE *fp = fopen(filep,"r");
-            if (fp == NULL){
-                exit(1);// BAD FILE
-            }else{
-                //this is where you open up the file
+            //BATCH MODE     
+            //this is where you open up the file
+            nread = getline(&line, &len, fp);
+            if(nread == EOF){
+                //try ctrl-d to test
+                //printf("EOF returned to nread\n");
+                exit(0);
+            }else if(nread == -1){
+                //ERROR READING LINE -> PRINT ERROR
+                char error_message[30] = "An error has occurred\n";
+                write(STDERR_FILENO, error_message, strlen(error_message)); 
             }
-            exit(0);//todo implement
         }
 
         //PROCESS USER INPUT ex: "ls -la /tmp"
