@@ -1,1 +1,8 @@
 paths[0]: tests
+api_skeleton.c
+batch.txt
+README.md
+tests
+tests-out
+wish
+wish.c

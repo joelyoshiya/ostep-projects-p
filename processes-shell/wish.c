@@ -109,27 +109,17 @@ int main(int argc, char *argv[]){
                         char error_message[30] = "An error has occurred\n";
                         write(STDERR_FILENO, error_message, strlen(error_message)); 
                     }else{
-                        int fork_rc = fork();
-                        if(fork_rc < 0){
-                            //fork failed -> exit
-                            exit(0);
-                        }else if(fork_rc == 0){
                             //VALID # OF ARGUMENTS
                             char *dir_path = dest[1];
                             int chdir_rc = chdir(dir_path);
                             if(chdir_rc == -1){
                                 char error_message[30] = "An error has occurred\n";
                                 write(STDERR_FILENO, error_message, strlen(error_message)); 
-                                exit(0);
                             }else{
                                 //successful
-                                exit(0);
+                                //printf("successful dir_path: %s \n",dir_path);
+                                break;//don't need to check for other-built ins
                             }
-                        }else{
-                            int wc = wait(NULL);
-                            assert(wc >= 0);
-                            break;//don't need to check for other bult-ins
-                        }
                     }
                 }
                 if(i == 2){
@@ -168,6 +158,7 @@ int main(int argc, char *argv[]){
 
         char *path_copy; // char pointer holding a copy of path
         int access_rc; //return code of ls access
+        int run_success = -1;
 
         //check paths given for prog
         for(int m = 0; m < paths_used; m++){
@@ -182,19 +173,39 @@ int main(int argc, char *argv[]){
             access_rc = access(path_copy, X_OK);
 
             if(access_rc == 0){
-                int execv_rc = execv(path_copy, dest);
-                if (execv_rc == -1){
-                    //error while performing execution
-                    char error_message[30] = "An error has occurred\n";
-                    write(STDERR_FILENO, error_message, strlen(error_message)); 
-                }
+                int fork_rc = fork();
+                if(fork_rc < 0){
+                    //fork failed -> exit
+                    exit(0);
+                }else if(fork_rc == 0){
+                    int execv_rc = execv(path_copy, dest);
+                    if (execv_rc == -1){
+                        //error while performing execution
+                        char error_message[30] = "An error has occurred\n";
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        exit(0); 
+                    }else{
+                        //successful
+                        exit(0);
+                    }
+                }else{
+                    //parent
+                    int wc = wait(NULL);
+                    assert(wc >= 0);
+                    run_success = 0;
+                    break;//don't need to check for other valid paths
+                }                
             }else{
                 free(path_copy);//failed access, try again
             }
         }
-        //tried to access with all paths, failed
-        char error_message[30] = "An error has occurred\n";
-        write(STDERR_FILENO, error_message, strlen(error_message));
+        //check if proc ran successfully, otherwise tried all paths and failed
+        if(run_success != 0){
+            char error_message[30] = "An error has occurred\n";
+            write(STDERR_FILENO, error_message, strlen(error_message));
+        }else if(run_success == 0){
+            continue;
+        }
         //END OF WHILE
     }
     //end of main
