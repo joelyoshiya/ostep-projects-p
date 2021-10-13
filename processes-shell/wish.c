@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
     }   
 
     //MAIN LOOP
-    while (strcmp(line,"exit") != 0) {
+    while (line != NULL) {
         if(rm == 0){
             //INTERACTIVE MODE
             printf("wish> ");
@@ -93,8 +93,11 @@ int main(int argc, char *argv[]){
                 //continue since we know command is built in
                 // (don't need to check for other commands)
                 if(i == 0){
-                    // EXIT BIC
-                    //call exit
+                    // Exit BIC -> Exit SHELL
+                    // call exit
+                    // free the allocated line and close standard input
+                    free(line);
+                    fclose(stdin);
                     exit(0);
                 }
                 if(i == 1){
@@ -109,7 +112,9 @@ int main(int argc, char *argv[]){
                         if(chdir_rc == -1){
                             char error_message[30] = "An error has occurred\n";
                             write(STDERR_FILENO, error_message, strlen(error_message)); 
-                        }   
+                        }else{
+                                break;//no need to search other paths, founrd right dir
+                        }
                     }
                 }
                 if(i == 2){
@@ -125,21 +130,17 @@ int main(int argc, char *argv[]){
                         printf("paths[%i]: %s\n", j-1, paths[j-1]);
                     }
                     paths_used = num_args;//update num of paths
+                    break;//doesn't iterate through paths
                 }
-                //COMMAND IDENTIFIED -> BREAK LOOP
-                break;
             }
         }
-        // FOUND A BIC
-        // Continue to next cmd
+        // FOUND A BIC - continue to next cmd
         if(is_bic == 0){
-            continue;
+            continue;//skips the execv proc control flow below
         }
 
         // NOT A BUILT IN COMMAND -> check for corresponding binary in path
 
-        // TODO REIMPLEMENT -> GENERALIZE AND SEARCH PATH FOR ARG
-        // check if user arg is a CMD
         char *path_copy; // char pointer holding a copy of path
         int rc; //return code of ls access
 
@@ -171,12 +172,6 @@ int main(int argc, char *argv[]){
         write(STDERR_FILENO, error_message, strlen(error_message));
         //END OF WHILE
     }
-
-    free(line);
-    fclose(stdin);
-    exit(0);
-
-    
     //end of main
     return 0;
 }
