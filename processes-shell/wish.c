@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
+#include <sys/wait.h>
+
 
 //testing: ~cs537-1/tests/p2a/test-wish.sh -c
 
@@ -106,14 +109,26 @@ int main(int argc, char *argv[]){
                         char error_message[30] = "An error has occurred\n";
                         write(STDERR_FILENO, error_message, strlen(error_message)); 
                     }else{
-                        //VALID # OF ARGUMENTS
-                        char *dir_path = dest[1];
-                        int chdir_rc = chdir(dir_path);
-                        if(chdir_rc == -1){
-                            char error_message[30] = "An error has occurred\n";
-                            write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        int fork_rc = fork();
+                        if(fork_rc < 0){
+                            //fork failed -> exit
+                            exit(0);
+                        }else if(fork_rc == 0){
+                            //VALID # OF ARGUMENTS
+                            char *dir_path = dest[1];
+                            int chdir_rc = chdir(dir_path);
+                            if(chdir_rc == -1){
+                                char error_message[30] = "An error has occurred\n";
+                                write(STDERR_FILENO, error_message, strlen(error_message)); 
+                                exit(0);
+                            }else{
+                                //successful
+                                exit(0);
+                            }
                         }else{
-                                break;//no need to search other paths, founrd right dir
+                            int wc = wait(NULL);
+                            assert(wc >= 0);
+                            break;//don't need to check for other bult-ins
                         }
                     }
                 }
@@ -130,7 +145,7 @@ int main(int argc, char *argv[]){
                         printf("paths[%i]: %s\n", j-1, paths[j-1]);
                     }
                     paths_used = num_args;//update num of paths
-                    break;//doesn't iterate through paths
+                    break; // don't check for other built-ins
                 }
             }
         }
@@ -142,7 +157,7 @@ int main(int argc, char *argv[]){
         // NOT A BUILT IN COMMAND -> check for corresponding binary in path
 
         char *path_copy; // char pointer holding a copy of path
-        int rc; //return code of ls access
+        int access_rc; //return code of ls access
 
         //check paths given for prog
         for(int m = 0; m < paths_used; m++){
@@ -154,9 +169,9 @@ int main(int argc, char *argv[]){
 
             //attempt to access with path
             // printf("path_copy: %s\n", path_copy);
-            rc = access(path_copy, X_OK);
+            access_rc = access(path_copy, X_OK);
 
-            if(rc == 0){
+            if(access_rc == 0){
                 int execv_rc = execv(path_copy, dest);
                 if (execv_rc == -1){
                     //error while performing execution
