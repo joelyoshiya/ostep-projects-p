@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+
 
 
 //testing: ~cs537-1/tests/p2a/test-wish.sh -c
@@ -23,12 +25,16 @@ int main(int argc, char *argv[]){
     // PATH GLOBAL VARS - See Piazza: @376
     int paths_num = 100;
     int paths_used = 2;
-    char *paths[paths_num];
-    paths[0] = "/bin";
-    paths[1] = "/usr/bin"; //check if prog is here if needed
+    char *PATH[paths_num];
+    PATH[0] = "/bin";
+    PATH[1] = "/usr/bin"; //check if prog is here if needed
     //BUILT IN COMMANDS
     static char* built_in_cmds[3] = {"exit","cd","path"};
     int num_bic = 3;
+    int is_bic = -1;
+    // REDIRECTION
+    int redirect_on = -1;
+    char *output_filename;
     
     //check cl args
     if(argc > 2){
@@ -45,6 +51,10 @@ int main(int argc, char *argv[]){
 
     //MAIN LOOP
     while (line != NULL) {
+        //reset loop conditionals
+        is_bic = -1;
+        redirect_on = -1;
+
         if(rm == 0){
             //INTERACTIVE MODE
             printf("wish> ");
@@ -79,29 +89,68 @@ int main(int argc, char *argv[]){
         //https://stackoverflow.com/questions/50915364/how-strsep-works-in-c
         copy[strcspn(copy, "\n")] = '\0';//removes trailing newline
 
-        for (i = 0; i < 10 && (dest[i] = strsep(&copy, " ")) != NULL; i++);   
+        for (i = 0; i < 100 && (dest[i] = strsep(&copy, " ")) != NULL; i++);   
+        
         // for (int c = 0; c < i; c++)
-        //     printf(" arg %d : [%s]\n", c, dest[c]); 
+        //         printf(" dest[%d] : [%s]\n", c, dest[c]);   
 
-        int num_args = i - 1; //prog name implicit
-        // printf("Num args: %i\n", num_args);
+        int num_args = i - 1; //prog name implicit (+1 for total # of args passed in by user)
+        //printf("Num args: %i\n", num_args);
+        // i = total amount of args
 
-        //parsed args in dest, cleaned so no newline
-        int is_bic = -1;
+        int red_sym_location;
+        int output_name_location;
+        //HANDLE REDIRECTION
+        for(int n = 0; n < i; n++){
+            if(strcmp(dest[n], ">") == 0){
+                //Found a Redirection symbol
+                //check if only one arg to right of it
+                if(n != (i - 2)){
+                    //too many output arguments
+                        char error_message[30] = "An error has occurred\n";
+                        write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        // TODO skip passed rest of command parsing?
+                }else{
+                    redirect_on = 0; //redirect is allowed
+                    num_args = n;
+                    red_sym_location = n;
+                    output_name_location = n + 1;
+                    output_filename = dest[n+1];
+                    break;
+                }
+            }
+        }
+        // update dest to only hold input args
+        if(redirect_on == 0){
+            //go into dest and set last two args ">" and "output_name" to null
+            dest[red_sym_location] = NULL;
+            dest[output_name_location] = NULL;
+        }
+
+        // for (int t = 0; t < num_args; t++)
+        // printf(" dest[%d] : [%s]\n", t, dest[t]);   
+
         // BUILT-IN-COMMANDS CHECK
-        for(int i = 0; i < num_bic; i++){
+        for(int i = 0; (i < num_bic) && (redirect_on != 0); i++){
             if(strcmp(dest[0], built_in_cmds[i]) == 0){
                 is_bic = 0;
                 //process command
                 //continue since we know command is built in
                 // (don't need to check for other commands)
                 if(i == 0){
-                    // Exit BIC -> Exit SHELL
-                    // call exit
-                    // free the allocated line and close standard input
-                    free(line);
-                    fclose(stdin);
-                    exit(0);
+                    //only can accept the exit cmd and no add'l args
+                    if(num_args == 0){
+                        // Exit BIC -> Exit SHELL
+                        // call exit
+                        // free the allocated line and close standard input
+                        free(line);
+                        fclose(stdin);
+                        exit(0);     
+                    }else{
+                        char error_message[30] = "An error has occurred\n";
+                        write(STDERR_FILENO, error_message, strlen(error_message)); 
+                    }
+          
                 }
                 if(i == 1){
                     // CD BIC
@@ -123,29 +172,21 @@ int main(int argc, char *argv[]){
                     }
                 }
                 if(i == 2){
-                    int fork_rc = fork();
-                    if(fork_rc < 0){
-                        //fork failed -> exit
-                        exit(0);
-                    }else if(fork_rc == 0){
-                        // PATH BIC
-                        //FIRST CLEAR DATA STRUCT
-                        for(int k = 0; (k < paths_num) && (paths[k] != NULL); k++){
-                            paths[k] = NULL;//de-allocates each char pointer
-                        }
-                        // ASSIGN PATHS
-                        for(int j = 1; (j < (num_args+1)) && (j < paths_num); j++){
-                            paths[j -1] = dest[j];
-                            
-                            printf("paths[%i]: %s\n", j-1, paths[j-1]);
-                        }
-                        paths_used = num_args;//update num of paths
-                        exit(0);
-                    }else{
-                        int wc = wait(NULL);
-                        assert(wc >= 0);
-                        break;//don't need to check for other bult-ins
+                    char *path = malloc(100);
+                    // PATH BIC
+                    //FIRST CLEAR DATA STRUCT
+                    for(int k = 0; k < paths_num; k++){
+                        PATH[k] = NULL;//de-allocates each char pointer
                     }
+                    // ASSIGN PATHS
+                    for(int j = 0; (j < num_args) && (j < paths_num); j++){
+                        strcpy(path, dest[j+1]);
+                        PATH[j] = path;
+                    }
+                    paths_used = num_args;//update num of paths
+                    // for(int l = 0; l < paths_used; l++){
+                    //     printf("PATH[%i]: [%s]\n", l, PATH[l]);
+                    // }
                 }
             }
         }
@@ -163,8 +204,11 @@ int main(int argc, char *argv[]){
         //check paths given for prog
         for(int m = 0; m < paths_used; m++){
             //form path
+            //printf("current path tested: [%s] \n", PATH[m]);
+            // printf("current prog arg tested: [%s] \n", dest[0]);
+
             path_copy = malloc(100);
-            memcpy(path_copy, paths[m], strlen(paths[m]));
+            memcpy(path_copy, PATH[m], strlen(PATH[m]));
             strcat(path_copy,"/");
             strcat(path_copy, dest[0]);//concat target prog name
 
@@ -178,15 +222,35 @@ int main(int argc, char *argv[]){
                     //fork failed -> exit
                     exit(0);
                 }else if(fork_rc == 0){
-                    int execv_rc = execv(path_copy, dest);
-                    if (execv_rc == -1){
-                        //error while performing execution
-                        char error_message[30] = "An error has occurred\n";
-                        write(STDERR_FILENO, error_message, strlen(error_message));
-                        exit(0); 
+                    if(redirect_on == 0){
+                        //child: redirect standard ouput to a file
+                        close(STDOUT_FILENO);
+                        //print to file with user determined filename
+                        open(output_filename, O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+                        int execv_rc = execv(path_copy, dest);
+                        if (execv_rc == -1){
+                            //error while performing execution
+                            char error_message[30] = "An error has occurred\n";
+                            write(STDERR_FILENO, error_message, strlen(error_message));
+                            exit(0); 
+                        }else{
+                            //successful
+                            run_success = 0;
+                            exit(0);
+                        }
                     }else{
-                        //successful
-                        exit(0);
+                        int execv_rc = execv(path_copy, dest);
+                        if (execv_rc == -1){
+                            //error while performing execution
+                            char error_message[30] = "An error has occurred\n";
+                            write(STDERR_FILENO, error_message, strlen(error_message));
+                            exit(0); 
+                        }else{
+                            //successful
+                            run_success = 0;
+                            exit(0);
+                        }
+
                     }
                 }else{
                     //parent
@@ -196,6 +260,7 @@ int main(int argc, char *argv[]){
                     break;//don't need to check for other valid paths
                 }                
             }else{
+                //printf("Access not ok\n");
                 free(path_copy);//failed access, try again
             }
         }
@@ -203,7 +268,8 @@ int main(int argc, char *argv[]){
         if(run_success != 0){
             char error_message[30] = "An error has occurred\n";
             write(STDERR_FILENO, error_message, strlen(error_message));
-        }else if(run_success == 0){
+        }else{
+            //ready for next cmd
             continue;
         }
         //END OF WHILE

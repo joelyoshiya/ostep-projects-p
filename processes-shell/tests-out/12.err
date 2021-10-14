@@ -1,1 +1,1 @@
-An error has occurred
+/p/course/cs537-remzi/tests/tester/run-tests.sh: line 27: 891690 Segmentation fault      (core dumped) ./wish tests/12.in
