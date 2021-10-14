@@ -100,7 +100,13 @@ int main(int argc, char *argv[]){
 
         int red_sym_location;
         int output_name_location;
+        int parse_error = -1;
         //HANDLE REDIRECTION
+
+
+
+
+        //OLD IMPLEMENTATION
         for(int n = 0; n < i; n++){
             if(strcmp(dest[n], ">") == 0){
                 //Found a Redirection symbol
@@ -109,8 +115,10 @@ int main(int argc, char *argv[]){
                     //too many output arguments
                         char error_message[30] = "An error has occurred\n";
                         write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        parse_error = 0;
                         //exit(1);
                         // TODO skip passed rest of command parsing?
+                        break;
                 }else{
                     redirect_on = 0; //redirect is allowed
                     num_args = n;
@@ -126,6 +134,8 @@ int main(int argc, char *argv[]){
             //go into dest and set last two args ">" and "output_name" to null
             dest[red_sym_location] = NULL;
             dest[output_name_location] = NULL;
+        }else if(parse_error == 0){
+            continue;//exit while loop
         }
 
         // for (int t = 0; t < num_args; t++)
