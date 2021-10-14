@@ -109,6 +109,7 @@ int main(int argc, char *argv[]){
                     //too many output arguments
                         char error_message[30] = "An error has occurred\n";
                         write(STDERR_FILENO, error_message, strlen(error_message)); 
+                        //exit(1);
                         // TODO skip passed rest of command parsing?
                 }else{
                     redirect_on = 0; //redirect is allowed
@@ -223,22 +224,22 @@ int main(int argc, char *argv[]){
                     exit(0);
                 }else if(fork_rc == 0){
                     if(redirect_on == 0){
-                        //child: redirect standard ouput to a file
+                        //REDIRECT
                         close(STDOUT_FILENO);
-                        //print to file with user determined filename
                         open(output_filename, O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
                         int execv_rc = execv(path_copy, dest);
                         if (execv_rc == -1){
                             //error while performing execution
                             char error_message[30] = "An error has occurred\n";
                             write(STDERR_FILENO, error_message, strlen(error_message));
-                            exit(0); 
+                            exit(0);  
                         }else{
                             //successful
                             run_success = 0;
                             exit(0);
                         }
                     }else{
+                        //NON REDIRECT
                         int execv_rc = execv(path_copy, dest);
                         if (execv_rc == -1){
                             //error while performing execution
