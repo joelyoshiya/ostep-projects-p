@@ -13,7 +13,7 @@
 int main(int argc, char *argv[]){
 
     // GLOBAL VARS
-
+    int num_args = -1;
     // RUN MODE: 0 -> Interactive, 1 -> Batch
     int rm = 0;
     //BATCH MODE VARS
@@ -45,6 +45,8 @@ int main(int argc, char *argv[]){
         rm = 1; // Run mode indicator: BATCH
         fp = fopen(argv[1],"r");
         if (fp == NULL){
+            char error_message[30] = "An error has occurred\n";
+            write(STDERR_FILENO, error_message, strlen(error_message)); 
             exit(1);// BAD FILE
         }
     }   
@@ -54,6 +56,7 @@ int main(int argc, char *argv[]){
         //reset loop conditionals
         is_bic = -1;
         redirect_on = -1;
+        num_args = -1;
 
         if(rm == 0){
             //INTERACTIVE MODE
@@ -87,54 +90,70 @@ int main(int argc, char *argv[]){
         int i;
 
         //https://stackoverflow.com/questions/50915364/how-strsep-works-in-c
-        copy[strcspn(copy, "\n")] = '\0';//removes trailing newline
-
-        for (i = 0; i < 100 && (dest[i] = strsep(&copy, " ")) != NULL; i++);   
-        
-        // for (int c = 0; c < i; c++)
-        //         printf(" dest[%d] : [%s]\n", c, dest[c]);   
-
-        int num_args = i - 1; //prog name implicit (+1 for total # of args passed in by user)
-        //printf("Num args: %i\n", num_args);
-        // i = total amount of args
-
-        int red_sym_location;
-        int output_name_location;
+        copy[strcspn(copy, "\n")] = '\0';//removes trailing newline        ;
         int parse_error = -1;
         //HANDLE REDIRECTION
 
-
-
-
-        //OLD IMPLEMENTATION
-        for(int n = 0; n < i; n++){
-            if(strcmp(dest[n], ">") == 0){
-                //Found a Redirection symbol
-                //check if only one arg to right of it
-                if(n != (i - 2)){
-                    //too many output arguments
-                        char error_message[30] = "An error has occurred\n";
-                        write(STDERR_FILENO, error_message, strlen(error_message)); 
-                        parse_error = 0;
-                        //exit(1);
-                        // TODO skip passed rest of command parsing?
-                        break;
-                }else{
-                    redirect_on = 0; //redirect is allowed
-                    num_args = n;
-                    red_sym_location = n;
-                    output_name_location = n + 1;
-                    output_filename = dest[n+1];
-                    break;
-                }
+        //returns pointer to > character in line
+        char *substr = strstr(line, ">");
+        if(substr == NULL){
+            //normal spaced parsing
+            for (i = 0; i < 100 && (dest[i] = strsep(&copy, " ")) != NULL; i++);
+            num_args = i - 1; //prog name implicit (+1 for total # of args passed in by user)
+            //printf("Num args: %i\n", num_args);
+            // i = total amount of args
+        }else{
+            //REDIRECTION
+            redirect_on = 0;
+            //split into pre > and post >, then spaced based argument splitting on pre
+            char *left = strsep(&copy, ">");
+            //printf("left: [%s]\n",left);
+            char *right = strsep(&copy, ">");//don't split -> file_name
+            output_filename = right;
+            //printf("right: [%s]\n",right);     
+            char *right_sub = strstr(right, " ");       
+            //set left side as the args for the command
+            for (i = 0; i < 100 && (dest[i] = strsep(&left, " ")) != NULL; i++); 
+            num_args = i - 1; //prog name implicit (+1 for total # of args passed in by user)
+            //printf("Num args: %i\n", num_args);
+            // i = total amount of args
+            if(dest[0] == NULL || right == NULL || strcmp(right,"") == 0 || right_sub != NULL){
+                char error_message[30] = "An error has occurred\n";
+                write(STDERR_FILENO, error_message, strlen(error_message)); 
+                parse_error = 0;
             }
         }
+        // //OLD IMPLEMENTATION
+        // for(int n = 0; n < i; n++){
+        //     if(strcmp(dest[n], ">") == 0){
+        //         //Found a Redirection symbol
+        //         //check if only one arg to right of it
+        //         if(n != (i - 2)){
+        //             //too many output arguments
+        //                 char error_message[30] = "An error has occurred\n";
+        //                 write(STDERR_FILENO, error_message, strlen(error_message)); 
+        //                 parse_error = 0;
+        //                 //exit(1);
+        //                 // TODO skip passed rest of command parsing?
+        //                 break;
+        //         }else{
+        //             redirect_on = 0; //redirect is allowed
+        //             num_args = n;
+        //             red_sym_location = n;
+        //             output_name_location = n + 1;
+        //             output_filename = dest[n+1];
+        //             break;
+        //         }
+        //     }
+        // }
         // update dest to only hold input args
-        if(redirect_on == 0){
-            //go into dest and set last two args ">" and "output_name" to null
-            dest[red_sym_location] = NULL;
-            dest[output_name_location] = NULL;
-        }else if(parse_error == 0){
+        // if(redirect_on == 0){
+        //     //go into dest and set last two args ">" and "output_name" to null
+        //     dest[red_sym_location] = NULL;
+        //     dest[output_name_location] = NULL;
+        // }else 
+        
+        if(parse_error == 0){
             continue;//exit while loop
         }
 
