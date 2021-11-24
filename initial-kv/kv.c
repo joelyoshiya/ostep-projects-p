@@ -2,14 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "kv.h"
 
-// referred to https://stackoverflow.com/questions/23279119/creating-and-understanding-linked-lists-of-structs-in-c/23280743
-typedef struct kv {
-    int key;
-    char value[100];
-    struct kv *next;
-    struct kv *prev;
-}Kv;
+// // referred to https://stackoverflow.com/questions/23279119/creating-and-understanding-linked-lists-of-structs-in-c/23280743
+// typedef struct kv {
+//     int key;
+//     char value[100];
+//     struct kv *next;
+//     struct kv *prev;
+// }Kv;
 
 extern int errno;//for error numbers
 
@@ -159,9 +160,9 @@ int write_db(Kv** head){
 	} else {
     Kv *currNode = *head;
         while(currNode!= NULL){
-            currNode = currNode->next;
             char str[] = "Example char for input\n";
             fwrite(str , 1 , sizeof(str) , fp); 
+            currNode = currNode->next;
         }
 		fclose (fp);
 	}
@@ -187,30 +188,36 @@ int main(int argc, char *argv[]){
     // CHECK: any bad commands found in CL input
     int val_cmd = 0; 
     int ind = 1; 
-    char cmd;
+    char* cmdtable[5] = {"p", "g", "a", "c","d"};
     while(ind < argc){
-        cmd = *argv[ind];
-        if((cmd != 'p')&(cmd != 'g')&(cmd != 'a')&(cmd != 'c')&(cmd != 'd')){
-        printf("%s \n", "bad command");
-        ind++;//get next input
-        }else{
-            val_cmd = 1;
-            break;
+        char *cmd_input = argv[ind];
+        char cmd = cmd_input[0];
+
+        for(int j = 0; j < 5; ++j){
+            if(cmd == *cmdtable[j]){
+                 val_cmd = 1;
+                break;
+            }
         }
+        if(val_cmd){
+            break;
+        }else{
+            printf("%s \n", "bad command");
+            ind++;//get next input
+        }
+
     }
     if(!val_cmd){
         // TODO remove if needed at end
         printf("No valids commands found\n");
         return 0;
     }
+    // commands valid
+
+
 
     // int npairs = 100; //number of key value structs allocated within array
-    // struct kv{
-    //     int key; 
-    //     char *value;
-    //     };
-    // struct kv *kv_pairs = malloc(npairs * sizeof(struct kv));   
-    // struct kv **pair_ptr = 
+
 
     for(int j = 1; j < argc; j++){
          //Split string
