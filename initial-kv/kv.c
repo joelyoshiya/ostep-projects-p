@@ -142,8 +142,12 @@ int all(Kv **head){
 int read_db(Kv **head){
     FILE *fp = fopen("database.txt","r+");
     if (fp == NULL){
-        fp = fopen("database.txt","w+");
+        //cannot read in database
+        return -1;
     }
+    //read in line, add to data struct
+    //char* line;
+    //while(char)
 
 
     fclose(fp);
@@ -155,7 +159,7 @@ int read_db(Kv **head){
 
 //write out kv pairs to database.txt file right before exit
 int write_db(Kv** head){
-    FILE *fp = fopen("database.txt","w");
+   FILE *fp = fopen("database.txt", "w+");
     if (fp == NULL) {
     fprintf(stderr, "Value of errno: %d\n", errno);
     fprintf(stderr, "Error opening the file: %s\n", strerror( errno ));
@@ -163,8 +167,7 @@ int write_db(Kv** head){
 	} else {
     Kv *currNode = *head;
         while(currNode!= NULL){
-            char str[] = "Example char for input\n";
-            fwrite(str , 1 , sizeof(str) , fp); 
+            fprintf(fp, "%d,%s\n",currNode->key, currNode->value);
             currNode = currNode->next;
         }
 		fclose (fp);
@@ -177,9 +180,8 @@ int main(int argc, char *argv[]){
     //Kv_linked_list *head = NULL;
     Kv *head = NULL;
     Kv **hd_ptr = &head;
-
     //load the current database into the data struct
-    read_db(hd_ptr);
+    //read_db(hd_ptr);
 
 
     //check if no arguments
@@ -192,54 +194,65 @@ int main(int argc, char *argv[]){
 
     
     // CHECK: any bad commands found in CL input
-    int val_cmd = 0; 
-    int ind = 1; 
+    int val_cmd;
+//    int ind = 1; 
     char* cmdtable[5] = {"p", "g", "a", "c","d"};
-    while(ind < argc){
-        char *cmd_input = argv[ind];
-        char cmd = cmd_input[0];
+    // while(ind < argc){
+    //     char *cmd_input = argv[ind];
+    //     char cmd = cmd_input[0];
 
-        for(int j = 0; j < 5; ++j){
-            if(cmd == *cmdtable[j]){
-                 val_cmd = 1;
+    //     for(int j = 0; j < 5; ++j){
+    //         if(cmd == *cmdtable[j]){
+    //              val_cmd = 1;
+    //             break;
+    //         }
+    //     }
+    //     if(val_cmd){
+    //         break;
+    //     }else{
+    //         printf("%s \n", "bad command");
+    //         ind++;//get next input
+    //     }
+
+    // }
+    // if(!val_cmd){
+    //     // TODO remove if needed at end
+    //     printf("No valids commands found\n");
+    //     return 0;
+    // }
+    // commands valid
+
+    //Go over every argument
+    for(int j = 1; j < argc; ++j){
+        val_cmd = 0;
+        //check if the current arg is valid
+        char *cmd_input = argv[j];
+        char cmd = cmd_input[0];
+        for(int k = 0; k < 5; ++k){
+            if(cmd == *cmdtable[k]){
+                val_cmd = 1;
                 break;
             }
         }
-        if(val_cmd){
-            break;
-        }else{
-            printf("%s \n", "bad command");
-            ind++;//get next input
+        if(!val_cmd){
+            printf("%s\n", "bad command");
+            continue;//keep processing rest of command line
         }
 
-    }
-    if(!val_cmd){
-        // TODO remove if needed at end
-        printf("No valids commands found\n");
-        return 0;
-    }
-    // commands valid
-
-
-
-    // int npairs = 100; //number of key value structs allocated within array
-
-
-    for(int j = 1; j < argc; j++){
-         //Split string
-        //char *command;
-        char *dest[10];
-        // printf("%s\n",command);
-        int i;
+        //Split string on "," as delimiter
+        char *dest[1000];
         // referred to: https://stackoverflow.com/questions/50915364/how-strsep-works-in-c
-        for (i=0;(dest[i]=strsep(&argv[j],","))!=NULL;i++){
+        for (int i=0;(dest[i]=strsep(&argv[j],","))!=NULL;i++){
             continue;
         }
         // for (int c=0;c<i;c++) {
         //     printf(" arg %d : [%s] \n",c,dest[c]);
         //     }
+        printf("dest: %s \n", dest[0]);
+        char in_cmd = *dest[0]; 
+        printf("in_cmd input: %c \n", in_cmd);
 
-        char in_cmd = *dest[0];  
+
         
         //checking for command type
         if(in_cmd == 'p')
@@ -263,7 +276,7 @@ int main(int argc, char *argv[]){
             // printf("bad command\n");
         }
 
-        }
+        }//end of arg checking
         write_db(hd_ptr);
 
         return 0;
