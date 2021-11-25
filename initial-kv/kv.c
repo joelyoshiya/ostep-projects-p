@@ -139,11 +139,14 @@ int all(Kv **head){
 }
 
 //read in database.txt data file at startup
-int load_db(Kv **head){
+int read_db(Kv **head){
     FILE *fp = fopen("database.txt","r+");
     if (fp == NULL){
         fp = fopen("database.txt","w+");
     }
+
+
+    fclose(fp);
 
     //getline()
     //fclose()
@@ -174,6 +177,9 @@ int main(int argc, char *argv[]){
     //Kv_linked_list *head = NULL;
     Kv *head = NULL;
     Kv **hd_ptr = &head;
+
+    //load the current database into the data struct
+    read_db(hd_ptr);
 
 
     //check if no arguments
