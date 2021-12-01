@@ -4,25 +4,11 @@
 #include <errno.h>
 #include "kv.h"
 
-// // referred to https://stackoverflow.com/questions/23279119/creating-and-understanding-linked-lists-of-structs-in-c/23280743
-// typedef struct kv {
-//     int key;
-//     char value[100];
-//     struct kv *next;
-//     struct kv *prev;
-// }Kv;
-
 extern int errno;//for error numbers
-
-// typedef struct kv_linked_list
-// {
-// /* Next-node pointer */
-// Kv *next;     /* pointer to the next node in the list. */
-// } Kv_linked_list;
 
 // - *put*: The format is `p,key,value`, where `key` is an integer, and
 // `value` an arbitrary string (without commas in it).
-// neeeded this to help:https://stackoverflow.com/questions/49999948/how-to-use-malloc-outside-main
+// needed this to help:https://stackoverflow.com/questions/49999948/how-to-use-malloc-outside-main
 int put(int key, char value[], Kv **head){
     // printf("key: %i \n",key);
     // printf("value: %s \n",value);
@@ -51,7 +37,6 @@ int put(int key, char value[], Kv **head){
         // printf("currNode next: %i\n",currNode->next->key);
         // printf("nextNode previous: %i\n",currNode->next->prev->key);
     }
-
     return 0;
 }
 
@@ -83,7 +68,9 @@ int get(int key, Kv **head){
 // key-value pair (and prints nothing), or fails to do so (and prints
 // `K not found` where `K` is the actual value of the key, i.e., some
 // integer).
+// TODO: #2 seg fault when this op performed, deleting seg faults when key is found
 int delete(int key, Kv **head){
+    //BASE CASE 0 
     if(*head == NULL){
         printf("%i not found\n",key);
         return 0;
@@ -98,21 +85,24 @@ int delete(int key, Kv **head){
         }   
         currNode = currNode->next;
     }
-    //now do delete operation
-    currNode->prev->next = currNode->next;
-    currNode->next->prev = currNode->prev;
-    free(currNode);
 
-    // Kv *checkNode = *head;
-    // while(checkNode->next != NULL){
-    //     checkNode = checkNode->next;
-    // }
-    // while(checkNode != NULL){
-    //     printf("checknodes key: %i \n",checkNode->key);
-    //     checkNode = checkNode->prev;
-
-    // }
-    
+    if(currNode->prev == NULL){
+        if(currNode->next == NULL){
+            free(currNode);
+        }else{
+            *head = currNode->next;
+            free(currNode);
+        }
+    }else{
+        if(currNode->next == NULL){
+            currNode->prev->next = NULL;
+            free(currNode);
+        }else{
+            currNode->prev->next = currNode->next;
+            currNode->next->prev = currNode->prev;
+            free(currNode);            
+        }
+    }
     return 0;
 }
 // - *clear*: The format is `c`. This command simply removes all
@@ -121,7 +111,17 @@ int clear(Kv **head){
     if(*head == NULL){
         return 0;
     }
-    free(*head);
+    //search for key
+    Kv *currNode = *head;
+    Kv *next;
+    //search for key
+    while(currNode->next != NULL){
+        next = currNode->next;
+        delete(currNode->key,head);
+        currNode = next;
+    }
+    delete(currNode->key, head);
+    //free(*head);
     return 0;
 }
 // - *all*: The format is `a`. This command prints out all key-value
@@ -138,6 +138,7 @@ int all(Kv **head){
     return 0;
 }
 
+// TODO #1
 //read in database.txt data file at startup
 int read_db(Kv **head){
     FILE *fp = fopen("database.txt","r+");
@@ -145,10 +146,29 @@ int read_db(Kv **head){
         //cannot read in database
         return -1;
     }
-    //read in line, add to data struct
-    //char* line;
-    //while(char)
 
+    // https://c-for-dummies.com/blog/?p=1112
+    char *buffer;
+    size_t bufsize = 32;
+    char *kv[2];
+
+    buffer = (char *)malloc(bufsize * sizeof(char));
+    if( buffer == NULL)
+    {
+        perror("Unable to allocate buffer");
+        exit(1);
+    }
+
+
+
+    while(getline(&buffer,&bufsize,fp) != -1){
+        buffer[strcspn(buffer, "\n")] = '\0';  /* Zap trailing newline */
+        char *st = buffer;
+        for (int i = 0; i < 2 && (kv[i] = strsep(&st, ",")) != NULL; i++)
+        ;
+        //printf("Input: %s,%s\n",kv[0],kv[1]);
+        put(atoi(kv[0]), kv[1], head);
+    }
 
     fclose(fp);
 
@@ -159,7 +179,7 @@ int read_db(Kv **head){
 
 //write out kv pairs to database.txt file right before exit
 int write_db(Kv** head){
-   FILE *fp = fopen("database.txt", "w+");
+    FILE *fp = fopen("database.txt", "w+");
     if (fp == NULL) {
     fprintf(stderr, "Value of errno: %d\n", errno);
     fprintf(stderr, "Error opening the file: %s\n", strerror( errno ));
@@ -177,64 +197,35 @@ int write_db(Kv** head){
 }
 
 int main(int argc, char *argv[]){
-    //Kv_linked_list *head = NULL;
+    int args = 0;
     Kv *head = NULL;
     Kv **hd_ptr = &head;
     //load the current database into the data struct
-    //read_db(hd_ptr);
-
+    read_db(hd_ptr);
 
     //check if no arguments
     if(argc < 2){
         return 0;
     }
-    // check if there is a bad command,
-    // if there is, read next char for correct input
-    // otherwise store command and continue
-
     
     // CHECK: any bad commands found in CL input
-    int val_cmd;
-//    int ind = 1; 
+    int good_cmd;
     char* cmdtable[5] = {"p", "g", "a", "c","d"};
-    // while(ind < argc){
-    //     char *cmd_input = argv[ind];
-    //     char cmd = cmd_input[0];
-
-    //     for(int j = 0; j < 5; ++j){
-    //         if(cmd == *cmdtable[j]){
-    //              val_cmd = 1;
-    //             break;
-    //         }
-    //     }
-    //     if(val_cmd){
-    //         break;
-    //     }else{
-    //         printf("%s \n", "bad command");
-    //         ind++;//get next input
-    //     }
-
-    // }
-    // if(!val_cmd){
-    //     // TODO remove if needed at end
-    //     printf("No valids commands found\n");
-    //     return 0;
-    // }
-    // commands valid
 
     //Go over every argument
-    for(int j = 1; j < argc; ++j){
-        val_cmd = 0;
+    for(int j = 1; j < argc; ++j)
+    {  
+        good_cmd = 0;
         //check if the current arg is valid
         char *cmd_input = argv[j];
         char cmd = cmd_input[0];
         for(int k = 0; k < 5; ++k){
             if(cmd == *cmdtable[k]){
-                val_cmd = 1;
+                good_cmd = 1;
                 break;
             }
         }
-        if(!val_cmd){
+        if(!good_cmd){
             printf("%s\n", "bad command");
             continue;//keep processing rest of command line
         }
@@ -243,25 +234,19 @@ int main(int argc, char *argv[]){
         char *dest[1000];
         // referred to: https://stackoverflow.com/questions/50915364/how-strsep-works-in-c
         for (int i=0;(dest[i]=strsep(&argv[j],","))!=NULL;i++){
-            continue;
+            args += 1;
         }
-        // for (int c=0;c<i;c++) {
-        //     printf(" arg %d : [%s] \n",c,dest[c]);
-        //     }
-        printf("dest: %s \n", dest[0]);
         char in_cmd = *dest[0]; 
-        printf("in_cmd input: %c \n", in_cmd);
-
-
-        
+     
         //checking for command type
-        if(in_cmd == 'p')
+        if((in_cmd == 'p') && (args > 1))
         {
             put(atoi(dest[1]),dest[2],hd_ptr);
-        }else if (in_cmd == 'g')
+
+        }else if ((in_cmd == 'g') && (args > 0))
         {
             get(atoi(dest[1]),hd_ptr);
-        }else if (in_cmd == 'd')
+        }else if ((in_cmd == 'd') && (args > 0))
         {
             delete(atoi(dest[1]),hd_ptr);
         }else if (in_cmd == 'c')
@@ -271,13 +256,9 @@ int main(int argc, char *argv[]){
         {
             all(hd_ptr);
         }
-        else
-        {
-            // printf("bad command\n");
-        }
+    }//end of arg checking
 
-        }//end of arg checking
-        write_db(hd_ptr);
+    write_db(hd_ptr);
 
-        return 0;
+    return 0;
 }
