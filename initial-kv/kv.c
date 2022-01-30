@@ -85,19 +85,26 @@ int delete(int key, Kv **head){
         }   
         currNode = currNode->next;
     }
-
+    //at start of the linked list
     if(currNode->prev == NULL){
+        //only one node
         if(currNode->next == NULL){
             free(currNode);
         }else{
+            //deleting the first node off the LL
             *head = currNode->next;
             free(currNode);
         }
-    }else{
+    }
+    //not at start of linked list
+    else{
+        // at then end of the linked list
         if(currNode->next == NULL){
             currNode->prev->next = NULL;
             free(currNode);
-        }else{
+        }
+        // somewhere in the middle (have to reconnect both parts)
+        else{
             currNode->prev->next = currNode->next;
             currNode->next->prev = currNode->prev;
             free(currNode);            
@@ -111,17 +118,17 @@ int clear(Kv **head){
     if(*head == NULL){
         return 0;
     }
-    //search for key
     Kv *currNode = *head;
     Kv *next;
-    //search for key
-    while(currNode->next != NULL){
+    do{
+        printf("%i to be deleted\n", currNode->key);
         next = currNode->next;
-        delete(currNode->key,head);
+        free(currNode);
         currNode = next;
-    }
-    delete(currNode->key, head);
-    //free(*head);
+    }while(currNode->next != NULL);
+    //at end of the linked list
+    free(currNode);
+    free(head);
     return 0;
 }
 // - *all*: The format is `a`. This command prints out all key-value
